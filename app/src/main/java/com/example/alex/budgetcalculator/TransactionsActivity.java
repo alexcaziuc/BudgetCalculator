@@ -3,25 +3,20 @@ package com.example.alex.budgetcalculator;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
-import com.example.alex.budgetcalculator.data.BalanceContract;
-import com.example.alex.budgetcalculator.data.BalanceContract.BalanceEntry;
-import com.example.alex.budgetcalculator.data.TransactionsDbHelper;
 import com.example.alex.budgetcalculator.data.TransactionsContract.TransactionEntry;
 
 public class TransactionsActivity extends AppCompatActivity {
 
-    private TransactionsDbHelper mDbHelper =  new TransactionsDbHelper(this);
+
     public static int totalBudget = Balance.balance;
     private TextView mTotalBudget;
 
@@ -40,7 +35,6 @@ public class TransactionsActivity extends AppCompatActivity {
             }
         });
 
-        mDbHelper = new TransactionsDbHelper(this);
     }
 
     @Override
@@ -74,45 +68,42 @@ public class TransactionsActivity extends AppCompatActivity {
 //
 //}
 
-    private void displayDatabaseBalance() {
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
-
-        // Define a projection that specifies which columns from the database
-        // you will actually use after this query.
-        String[] projection = {
-                BalanceContract.BalanceEntry.COLUMN_BALANCE };
-
-
-        Cursor cursor = db.query(
-                BalanceContract.BalanceEntry.TABLE_NAME,
-                projection,
-                null,
-                null,
-                null,
-                null,
-                null );
-
-        TextView mTotalBudgetView = findViewById(R.id.transaction_totalBudget_textVIew);
-
-        try {
-
-
-
-
-        } finally {
-            // Always close the cursor when you're done reading from it. This releases all its
-            // resources and makes it invalid.
-
-            cursor.close();
-        }
-
-    }
+//    private void displayDatabaseBalance() {
+//        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+//
+//        // Define a projection that specifies which columns from the database
+//        // you will actually use after this query.
+//        String[] projection = {
+//                BalanceContract.BalanceEntry.COLUMN_BALANCE };
+//
+//
+//        Cursor cursor = db.query(
+//                BalanceContract.BalanceEntry.TABLE_NAME,
+//                projection,
+//                null,
+//                null,
+//                null,
+//                null,
+//                null );
+//
+//        TextView mTotalBudgetView = findViewById(R.id.transaction_totalBudget_textVIew);
+//
+//        try {
+//
+//
+//
+//
+//        } finally {
+//            // Always close the cursor when you're done reading from it. This releases all its
+//            // resources and makes it invalid.
+//
+//            cursor.close();
+//        }
+//
+//    }
 
 
     private void displayDatabaseInfo() {
-
-        //TransactionsDbHelper mDbHelper = new TransactionsDbHelper(this);
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         // Define a projection that specifies which columns from the database
         // you will actually use after this query.
@@ -122,14 +113,15 @@ public class TransactionsActivity extends AppCompatActivity {
                 TransactionEntry.COLUMN_CATEGORY,
                 TransactionEntry.COLUMN_AMOUNT };
 
-        Cursor cursor = db.query(
-                TransactionEntry.TABLE_NAME,
-                projection,
+        // Perform a query on the provider using the ContentResolver.
+        // Use the {@link TransactionEntry#CONTENT_URI} to access the transactions data.
+        Cursor cursor = getContentResolver().query(
+                TransactionEntry.CONTENT_URI,    // The content URI of the transactions table
+                projection,                      // The columns to return for each row
                 null,
                 null,
-                null,
-                null,
-                null );
+                null);
+
 
         TextView displayView = (TextView) findViewById(R.id.text_view_pet);
 
@@ -173,7 +165,9 @@ public class TransactionsActivity extends AppCompatActivity {
             // Always close the cursor when you're done reading from it. This releases all its
             // resources and makes it invalid.
 
-            cursor.close();
+            if (cursor != null) {
+                cursor.close();
+            }
         }
     }
 
@@ -210,27 +204,21 @@ public class TransactionsActivity extends AppCompatActivity {
     }
 
     private void insertTestTransaction() {
-        // Gets the database in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
         totalBudget +=100;
 
         // Create a ContentValues object where column names are the keys,
-        // and Toto's pet attributes are the values.
+        // and Test transaction attributes are the values.
         ContentValues values = new ContentValues();
-        values.put(TransactionEntry.COLUMN_TRANS_NAME, "Dummy data" );
+        values.put(TransactionEntry.COLUMN_TRANS_NAME, "Test transaction");
         values.put(TransactionEntry.COLUMN_CATEGORY, TransactionEntry.CATEGORY_INCOME);
         values.put(TransactionEntry.COLUMN_AMOUNT, 100);
 
-
-        // Insert a new row for Toto in the database, returning the ID of that new row.
-        // The first argument for db.insert() is the pets table name.
-        // The second argument provides the name of a column in which the framework
-        // can insert NULL in the event that the ContentValues is empty (if
-        // this is set to "null", then the framework will not insert a row when
-        // there are no values).
-        // The third argument is the ContentValues object containing the info for Toto.
-        long newRowId = db.insert(TransactionEntry.TABLE_NAME, null, values);
+        // Insert a new row for Test transaction into the provider using the ContentResolver.
+        // Use the {@link TransactionEntry#CONTENT_URI} to indicate that we want to insert
+        // into the pets database table.
+        // Receive the new content URI that will allow us to access Test transaction's data in the future.
+        Uri newUri = getContentResolver().insert(TransactionEntry.CONTENT_URI, values);
     }
 
 }

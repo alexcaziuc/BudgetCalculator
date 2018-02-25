@@ -2,6 +2,7 @@ package com.example.alex.budgetcalculator;
 
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
@@ -16,9 +17,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.alex.budgetcalculator.data.BalanceContract;
 import com.example.alex.budgetcalculator.data.TransactionsContract.TransactionEntry;
-import com.example.alex.budgetcalculator.data.BalanceContract.BalanceEntry;
 import com.example.alex.budgetcalculator.data.TransactionsDbHelper;
 
 /**
@@ -26,21 +25,15 @@ import com.example.alex.budgetcalculator.data.TransactionsDbHelper;
  */
     public class EditorActivity extends AppCompatActivity {
 
+    private static int totalBudget = Balance.balance;
         private TransactionsDbHelper mDbHelper;
-
         /** EditText field to enter the category name */
         private EditText mNameEditText;
-
         /** EditText field to enter the amount */
         private EditText mAmountEditText;
-
         /** EditText field to enter the category type */
         private Spinner mCategorySpinner;
-
         private TextView mTotalBudget;
-
-        private static int totalBudget = Balance.balance;
-
         /**
          * Category of the transaction. The possible values are:
          *  1 for income, 2 for expense.
@@ -61,6 +54,7 @@ import com.example.alex.budgetcalculator.data.TransactionsDbHelper;
             setupSpinner();
 
             mDbHelper = new TransactionsDbHelper(this);
+
 
         }
 
@@ -94,8 +88,10 @@ import com.example.alex.budgetcalculator.data.TransactionsDbHelper;
                     if (!TextUtils.isEmpty(selection)) {
                         if (selection.equals(getString(R.string.transaction_type_income))) {
                             mCategory = TransactionEntry.CATEGORY_INCOME; // Income true
+                            Toast.makeText(EditorActivity.this, "Income category selected", Toast.LENGTH_SHORT).show();
                         } else if (selection.equals(getString(R.string.transaction_type_expense))) {
                             mCategory = TransactionEntry.CATEGORY_EXPENSE; // Expense false
+                            Toast.makeText(EditorActivity.this, "Expense category selected", Toast.LENGTH_SHORT).show();
                         } else
                         {
                             Toast.makeText(EditorActivity.this, "Select a category", Toast.LENGTH_SHORT).show();
@@ -113,7 +109,9 @@ import com.example.alex.budgetcalculator.data.TransactionsDbHelper;
         }
 
 
-
+    /**
+     * Get user input from editor and save new transaction into database.
+     */
     private void insertIncomeTransaction() {
         String transName = mNameEditText.getText().toString().trim();
         String amountString = mAmountEditText.getText().toString().trim();
@@ -121,36 +119,28 @@ import com.example.alex.budgetcalculator.data.TransactionsDbHelper;
 
         Balance.balance += amount;
 
-        // Gets the database in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-
         // Create a ContentValues object where column names are the keys,
         ContentValues incomeValues = new ContentValues();
         incomeValues.put(TransactionEntry.COLUMN_TRANS_NAME, transName );
         incomeValues.put(TransactionEntry.COLUMN_CATEGORY, TransactionEntry.CATEGORY_INCOME);
         incomeValues.put(TransactionEntry.COLUMN_AMOUNT, amount);
 
-        ContentValues balanceValues = new ContentValues();
-        balanceValues.put(BalanceEntry.COLUMN_BALANCE, amount);
+        // Insert a new transaction into the provider, returning the content URI for the new transaction.
+        Uri newUri = getContentResolver().insert(TransactionEntry.CONTENT_URI, incomeValues);
 
-        long newRowId = db.insert(TransactionEntry.TABLE_NAME, null, incomeValues);
-
-        long confirmBalanceUpdate = db.update(BalanceEntry.TABLE_NAME, balanceValues,
-                null, null);
-
-
-
-        if(confirmBalanceUpdate == -1)
-            Toast.makeText(this,"Error when saving the balance", Toast.LENGTH_LONG).show();
-        else
-            Toast.makeText(this,"Balance updated", Toast.LENGTH_SHORT).show();
-
-
-        if(newRowId == -1)
-            Toast.makeText(this,"Error when saving income transaction", Toast.LENGTH_LONG).show();
-         else
-            Toast.makeText(this,"Income Transaction saved", Toast.LENGTH_SHORT).show();
+        // Show a toast message depending on whether or not the insertion was successful
+        if (newUri == null) {
+            // If the new content URI is null, then there was an error with insertion.
+            Toast.makeText(this, getString(R.string.editor_insert_transaction_failed),
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            // Otherwise, the insertion was successful.
+            Toast.makeText(this, getString(R.string.editor_insert_transaction_successful),
+                    Toast.LENGTH_SHORT).show();
+        }
     }
+
+
 
     private void insertExpenseTransaction() {
 

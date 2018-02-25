@@ -40,4 +40,10 @@
 
     <!-- Label for dropdown menu option if the pet is female [CHAR LIMIT=20] -->
     <string name="transaction_type_expense">Expense</string>
+
+    <!-- Toast message in editor when new transaction has been successfully inserted [CHAR LIMIT=NONE] -->
+    <string name="editor_insert_transaction_successful">Transaction saved</string>
+
+    <!-- Toast message in editor when new pet has failed to be inserted [CHAR LIMIT=NONE] -->
+    <string name="editor_insert_transaction_failed">Error with saving transaction</string>
 </resources>
